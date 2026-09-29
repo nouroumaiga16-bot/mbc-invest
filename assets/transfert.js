@@ -213,18 +213,23 @@
    * MENU — les entrées dépendent du rôle (le serveur vérifie de son côté)
    * ================================================================ */
 
+  // « ordre » fixe la position dans le menu (les modules des phases suivantes s'insèrent entre les deux).
   const VUES = {
-    accueil: { titre: 'Accueil', roles: ['ADMIN', 'AGENT_OUAGA', 'AGENT_CANADA'], afficher: vueAccueil },
-    parametres: { titre: 'Paramètres', roles: ['ADMIN'], afficher: vueParametres },
-    utilisateurs: { titre: 'Utilisateurs', roles: ['ADMIN'], afficher: vueUtilisateurs },
-    journal: { titre: 'Journal d\'audit', roles: ['ADMIN'], afficher: vueJournal }
+    accueil: { ordre: 10, titre: 'Accueil', roles: ['ADMIN', 'AGENT_OUAGA', 'AGENT_CANADA'], afficher: vueAccueil },
+    parametres: { ordre: 900, titre: 'Paramètres', roles: ['ADMIN'], afficher: vueParametres },
+    utilisateurs: { ordre: 910, titre: 'Utilisateurs', roles: ['ADMIN'], afficher: vueUtilisateurs },
+    journal: { ordre: 920, titre: 'Journal d\'audit', roles: ['ADMIN'], afficher: vueJournal }
   };
 
   function construireMenu() {
     const menu = $('#menu');
     menu.replaceChildren(...Object.entries(VUES)
+      .sort(([, a], [, b]) => a.ordre - b.ordre)
       .filter(([, v]) => v.roles.includes(etat.utilisateur.role))
-      .map(([cle, v]) => el('button', { type: 'button', 'data-vue': cle, onclick: () => ouvrirVue(cle) }, v.titre)));
+      .map(([cle, v]) => el('button', { type: 'button', 'data-vue': cle, onclick: () => {
+        if (v.auMenu) v.auMenu(); // ex. revenir à la liste des clients
+        ouvrirVue(cle);
+      } }, v.titre)));
   }
 
   async function ouvrirVue(cle) {
@@ -283,7 +288,7 @@
         el('ul', { class: 'liste' },
           ...[
             ['Phase 1 — Connexion, rôles, paramètres, journal d\'audit', true],
-            ['Phase 2 — Clients, bénéficiaires, KYC', false],
+            ['Phase 2 — Clients, bénéficiaires, KYC', true],
             ['Phase 3 — Taux et transactions', false],
             ['Phase 4 — Caisses, équilibre, rapprochement', false],
             ['Phase 5 — Flux internes du groupe', false],
@@ -297,7 +302,8 @@
     } else {
       blocs.push(el('div', { class: 'carte' },
         el('h2', {}, 'Vos outils'),
-        el('p', { class: 'aide' }, 'Les écrans clients, encaissements et paiements arriveront dans les prochaines étapes.')));
+        el('p', { class: 'aide' }, 'Menu « Clients » : créer une fiche client, ajouter ses bénéficiaires et les photos de sa pièce. ',
+          'Les encaissements et paiements arriveront dans les prochaines étapes.')));
     }
     vue.replaceChildren(...blocs);
   }
@@ -654,6 +660,18 @@
       notifier('Session expirée : reconnectez-vous.', true);
     }
   }, 60000);
+
+  /**
+   * Boîte à outils partagée avec les autres fichiers du site (clients.js, …).
+   * Chaque module appelle MBT.ajouterVue() pour ajouter son écran au menu.
+   */
+  window.MBT = {
+    api, el, $, notifier, pendant, ouvrirModale, fermerModale, ouvrirVue,
+    formatCad, formatFcfa, formatCadTexte, formatDate,
+    utilisateur: () => etat.utilisateur,
+    estAdmin: () => !!etat.utilisateur && etat.utilisateur.role === 'ADMIN',
+    ajouterVue: (cle, definition) => { VUES[cle] = definition; }
+  };
 
   document.addEventListener('DOMContentLoaded', demarrer);
 })();

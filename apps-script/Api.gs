@@ -66,6 +66,58 @@ function actions_() {
       fn: function (ctx, d) { return reinitialiserMdpUtilisateur_(ctx.utilisateur, d.id); }
     },
 
+    // --- Clients et bénéficiaires (phase 2) ---
+    'clients.referentiels': {
+      roles: TOUS_LES_ROLES_,
+      fn: function () {
+        return { typesPiece: MBT.TYPES_PIECE, statuts: MBT.STATUTS_CLIENT, typesImage: MBT.TYPES_IMAGE };
+      }
+    },
+    'clients.lister': {
+      roles: TOUS_LES_ROLES_,
+      fn: function (ctx, d) { return listerClients_(d); }
+    },
+    'clients.fiche': {
+      roles: TOUS_LES_ROLES_,
+      fn: function (ctx, d) { return ficheClient_(ctx.utilisateur, d); }
+    },
+    'clients.creer': {
+      roles: TOUS_LES_ROLES_,
+      fn: function (ctx, d) { return creerClient_(ctx.utilisateur, d); }
+    },
+    'clients.modifier': {
+      roles: TOUS_LES_ROLES_, // un agent ne peut modifier qu'un client « Nouveau » (contrôlé dans modifierClient_)
+      fn: function (ctx, d) { return modifierClient_(ctx.utilisateur, d); }
+    },
+    'clients.televerserPhoto': {
+      roles: TOUS_LES_ROLES_,
+      fn: function (ctx, d) { return televerserPhotoClient_(ctx.utilisateur, d); }
+    },
+    'clients.photo': {
+      roles: ADMIN_SEUL_,
+      fn: function (ctx, d) { return photoClient_(ctx.utilisateur, d); }
+    },
+    'clients.verifier': {
+      roles: ADMIN_SEUL_,
+      fn: function (ctx, d) { return verifierClient_(ctx.utilisateur, d); }
+    },
+    'clients.bloquer': {
+      roles: ADMIN_SEUL_,
+      fn: function (ctx, d) { return bloquerClient_(ctx.utilisateur, d); }
+    },
+    'clients.debloquer': {
+      roles: ADMIN_SEUL_,
+      fn: function (ctx, d) { return debloquerClient_(ctx.utilisateur, d); }
+    },
+    'beneficiaires.creer': {
+      roles: TOUS_LES_ROLES_,
+      fn: function (ctx, d) { return creerBeneficiaire_(ctx.utilisateur, d); }
+    },
+    'beneficiaires.modifier': {
+      roles: TOUS_LES_ROLES_, // seule la désactivation est réservée à l'Admin (contrôlé dans modifierBeneficiaire_)
+      fn: function (ctx, d) { return modifierBeneficiaire_(ctx.utilisateur, d); }
+    },
+
     'audit.lister': {
       roles: ADMIN_SEUL_,
       fn: function (ctx, d) { return listerJournal_(d); }

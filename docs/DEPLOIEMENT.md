@@ -26,8 +26,8 @@ Durée : environ 30 minutes la première fois.
    - tapez le nom **sans** `.gs` (ex. `Config`) puis Entrée ;
    - effacez le contenu proposé et **collez** tout le contenu du fichier du dépôt.
 
-   Fichiers à créer : `Api`, `Audit`, `BaseDonnees`, `Config`, `Installation`, `Parametres`,
-   `Securite`, `Utilisateurs`, `Utilitaires`.
+   Fichiers à créer : `Api`, `Audit`, `BaseDonnees`, `Clients`, `Config`, `Documents`, `Installation`,
+   `Parametres`, `Securite`, `Utilisateurs`, `Utilitaires`.
 4. Supprimez le fichier `Code.gs` d'origine (clic sur les ⋮ à côté → Supprimer).
 5. Cliquez sur la **roue dentée** (Paramètres du projet, à gauche) → cochez
    **« Afficher le fichier manifeste "appsscript.json" dans l'éditeur »**.
@@ -106,6 +106,34 @@ L'adresse `/exec` reste la même, pas besoin de toucher au site.
 | 12 | Dans le classeur, modifier à la main une cellule de `JournalAudit`, puis revérifier | ⚠️ Alerte indiquant la ligne modifiée (remettez ensuite la valeur d'origine) |
 
 Tests automatiques (pour un développeur) : `node --test tests/*.test.js` (Node.js 18+).
+
+## Mettre à jour vers une nouvelle phase
+
+1. Dans Apps Script, remplacez le contenu de **chaque** fichier par la nouvelle version du dépôt,
+   et créez les nouveaux fichiers (phase 2 : `Clients` et `Documents`).
+2. Enregistrez, puis dans le classeur : menu **MBC Transfert → 1. Installer / mettre à jour les tables**
+   (ajoute les nouvelles colonnes et les nouveaux paramètres, sans rien effacer).
+3. **Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer**.
+4. Sur GitHub, le site se met à jour tout seul après la fusion dans `main`.
+
+## Tester la phase 2 (15 minutes)
+
+| # | Action | Résultat attendu |
+|---|--------|------------------|
+| 1 | Clients → **+ Nouveau client**, laisser « Profession » vide | Refus : champ obligatoire |
+| 2 | Remplir tout, pièce **CNIB**, ajouter seulement la photo recto (prise avec le téléphone) | Client `CLI-000001` créé, statut **Nouveau**, « Il manque la photo du verso » |
+| 3 | **✔ Vérifier le client** | Refus : verso manquant |
+| 4 | Ajouter le verso depuis la fiche, puis **Vérifier** sans cocher la case | Refus : confirmation requise |
+| 5 | Cocher la case et confirmer | Statut **Vérifié** |
+| 6 | **Modifier** → changer l'adresse | Reste **Vérifié** |
+| 7 | **Modifier** → changer le numéro de pièce | Repasse à **Nouveau** (à revérifier) |
+| 8 | Créer un 2ᵉ client avec la **même pièce** (même numéro, même avec des espaces) | Refus : « déjà enregistrée pour le client CLI-000001 » |
+| 9 | Créer un client avec une date d'expiration **passée** | Fiche en rouge « Pièce expirée : aucune transaction possible » |
+| 10 | Ajouter un bénéficiaire, puis le même une 2ᵉ fois | 2ᵉ ajout refusé (doublon) |
+| 11 | **Bloquer** sans motif, puis avec motif | Refus, puis statut **Bloqué** |
+| 12 | Rechercher par une partie du nom, du téléphone ou du numéro de pièce | Le client est trouvé |
+| 13 | Google Drive → dossier « MBC Transfert — Documents privés » → `Clients/CLI-000001` | Les photos y sont ; le dossier n'est partagé avec personne |
+| 14 | Journal d'audit | Création, photos, consultation des photos, vérification, blocage sont tracés |
 
 ## Bonnes pratiques de sécurité
 

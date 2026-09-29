@@ -79,6 +79,27 @@ function creerEnvironnement() {
     deleteSheet: (f) => { delete feuilles[f.getName()]; ordre.splice(ordre.indexOf(f.getName()), 1); }
   };
   const proprietes = {};
+  // Faux Google Drive : dossiers et fichiers en mémoire.
+  const dossiers = {};
+  const fichiers = {};
+  let compteurDrive = 0;
+  function creerDossier(nom) {
+    const id = 'DOSSIER-' + (++compteurDrive);
+    const enfants = [];
+    const d = {
+      getId: () => id, getName: () => nom, _fichiers: [],
+      getFoldersByName: (n) => { const t = enfants.filter(e => e.getName() === n); let i = 0; return { hasNext: () => i < t.length, next: () => t[i++] }; },
+      createFolder: (n) => { const e = creerDossier(n); enfants.push(e); return e; },
+      createFile: (blob) => {
+        const fid = 'FICHIER-' + (++compteurDrive);
+        fichiers[fid] = { getId: () => fid, getName: () => blob.nom, getBlob: () => blob, _dossier: d };
+        d._fichiers.push(fichiers[fid]);
+        return fichiers[fid];
+      }
+    };
+    dossiers[id] = d;
+    return d;
+  }
   const alertes = [];
   const reponsesPrompt = [];
 
@@ -88,16 +109,25 @@ function creerEnvironnement() {
     __alertes: alertes,
     __reponsesPrompt: reponsesPrompt,
     __feuilles: feuilles,
+    __fichiers: fichiers,
     Utilities: {
       DigestAlgorithm: { SHA_256: 'sha256' },
       Charset: { UTF_8: 'utf8' },
       computeDigest: (algo, texte) => Array.from(crypto.createHash(algo).update(String(texte), 'utf8').digest()).map(b => b > 127 ? b - 256 : b),
       getUuid: () => crypto.randomUUID(),
       formatDate: (d, fuseau, format) => {
-        const p = new Intl.DateTimeFormat('en-CA', { timeZone: fuseau, year: 'numeric', month: '2-digit', day: '2-digit' })
+        const p = new Intl.DateTimeFormat('en-CA', { timeZone: fuseau, year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
           .formatToParts(d).reduce((a, x) => { a[x.type] = x.value; return a; }, {});
-        return format.replace('yyyy', p.year).replace('MM', p.month).replace('dd', p.day);
-      }
+        return format.replace('yyyy', p.year).replace('MM', p.month).replace('dd', p.day)
+          .replace('HH', p.hour).replace('mm', p.minute).replace('ss', p.second);
+      },
+      base64Decode: (s) => {
+        if (!/^[A-Za-z0-9+/=\s]*$/.test(s)) throw new Error('base64 invalide');
+        return Array.from(Buffer.from(s, 'base64')).map(b => b > 127 ? b - 256 : b);
+      },
+      base64Encode: (octets) => Buffer.from(octets.map(b => b & 0xff)).toString('base64'),
+      newBlob: (octets, mime, nom) => ({ octets, mime, nom, getBytes: () => octets, getContentType: () => mime, getName: () => nom })
     },
     SpreadsheetApp: {
       getActiveSpreadsheet: () => classeur,
@@ -120,8 +150,9 @@ function creerEnvironnement() {
     },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
     DriveApp: {
-      createFolder: () => ({ getId: () => 'DOSSIER-TEST' }),
-      getFolderById: () => ({ getName: () => 'dossier' })
+      createFolder: (nom) => creerDossier(nom),
+      getFolderById: (id) => { if (!dossiers[id]) throw new Error('introuvable'); return dossiers[id]; },
+      getFileById: (id) => { if (!fichiers[id]) throw new Error('introuvable'); return fichiers[id]; }
     },
     ScriptApp: {
       getProjectTriggers: () => [],

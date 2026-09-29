@@ -13,7 +13,7 @@
  */
 
 const MBT = {
-  VERSION: '1.0.0-phase1',
+  VERSION: '1.1.0-phase2',
   NOM: 'MBC Transfert',
 
   ROLES: {
@@ -36,6 +36,40 @@ const MBT = {
   // Nombre de tours de hachage des mots de passe (ralentit les attaques par force brute).
   // Stocké dans chaque empreinte : on peut l'augmenter plus tard sans casser les anciens comptes.
   HACHAGE_ITERATIONS: 1000,
+
+  // Statuts d'un client (KYC).
+  STATUTS_CLIENT: {
+    NOUVEAU: 'Nouveau',
+    VERIFIE: 'Vérifié',
+    BLOQUE: 'Bloqué'
+  },
+
+  // Types de pièce d'identité acceptés (AUTRE : préciser laquelle).
+  TYPES_PIECE: {
+    CNIB: 'CNIB',
+    PASSEPORT: 'Passeport',
+    PERMIS: 'Permis de conduire',
+    RESIDENT_PERMANENT: 'Carte de résident permanent',
+    CARTE_SEJOUR: 'Carte de séjour',
+    AUTRE: 'Autre'
+  },
+
+  // Statuts d'une transaction (utilisés à partir de la phase 3).
+  STATUTS_TRANSACTION: {
+    BROUILLON: 'Brouillon',
+    EN_ATTENTE_PAIEMENT: 'En attente de paiement',
+    PAIEMENT_CONFIRME: 'Paiement confirmé',
+    VALIDEE: 'Validée',
+    REMISE_AUTORISEE: 'Remise autorisée',
+    PAYEE: 'Payée au bénéficiaire',
+    CLOTUREE: 'Clôturée',
+    ANNULEE: 'Annulée',
+    REMBOURSEE: 'Remboursée',
+    BLOQUEE_CONFORMITE: 'Bloquée conformité'
+  },
+
+  // Formats de photo acceptés.
+  TYPES_IMAGE: ['image/jpeg', 'image/png', 'image/webp'],
 
   // Clés utilisées dans les « Propriétés du script » (stockage privé côté serveur).
   PROPRIETES: {
@@ -69,11 +103,15 @@ const SCHEMA = {
     'Id', 'NumeroClient', 'NomComplet', 'DateNaissance', 'Adresse', 'Ville', 'Pays',
     'Telephone', 'Profession', 'TypePiece', 'NumeroPiece', 'ExpirationPiece',
     'PhotoRectoId', 'PhotoVersoId', 'Statut', 'Notes',
-    'CreeLe', 'CreePar', 'ModifieLe', 'ModifiePar'
+    'CreeLe', 'CreePar', 'ModifieLe', 'ModifiePar',
+    // Ajouts phase 2
+    'TypePieceAutre', 'PaysEmissionPiece', 'Email', 'VerifieLe', 'VerifiePar', 'MotifBlocage'
   ],
   Beneficiaires: [
     'Id', 'ClientId', 'NomComplet', 'Telephone', 'Ville', 'Pays', 'LienClient',
-    'Actif', 'CreeLe', 'CreePar', 'ModifieLe', 'ModifiePar'
+    'Actif', 'CreeLe', 'CreePar', 'ModifieLe', 'ModifiePar',
+    // Ajouts phase 2
+    'Notes'
   ],
   Taux: [
     'Id', 'DateUTC', 'TauxReference', 'MargeAType', 'MargeAValeur',
@@ -180,6 +218,14 @@ const PARAMETRES_DEFAUT = [
     description: 'Alerte si le volume 30 jours d\'un client dépasse X fois sa moyenne mensuelle habituelle.' },
   { cle: 'CONSERVATION_ANNEES', valeur: '5', type: 'entier', categorie: 'Conformité',
     description: 'Durée de conservation des dossiers (années). À confirmer.' },
+
+  // --- Clients (KYC) ---
+  { cle: 'CLIENT_AGE_MIN', valeur: '18', type: 'entier', categorie: 'Conformité',
+    description: 'Âge minimum d\'un client (0 = pas de contrôle). À confirmer par le conseiller.' },
+  { cle: 'PIECE_ALERTE_EXPIRATION_JOURS', valeur: '30', type: 'entier', categorie: 'Conformité',
+    description: 'Afficher un avertissement quand la pièce d\'identité expire dans moins de X jours.' },
+  { cle: 'PHOTO_TAILLE_MAX_KO', valeur: '4000', type: 'entier', categorie: 'Conformité',
+    description: 'Taille maximale d\'une photo téléversée (Ko), après compression par le site.' },
 
   // --- Taux et marges ---
   { cle: 'TAUX_VALIDITE_HEURES', valeur: '24', type: 'entier', categorie: 'Taux',
