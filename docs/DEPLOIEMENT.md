@@ -26,8 +26,8 @@ Durée : environ 30 minutes la première fois.
    - tapez le nom **sans** `.gs` (ex. `Config`) puis Entrée ;
    - effacez le contenu proposé et **collez** tout le contenu du fichier du dépôt.
 
-   Fichiers à créer : `Api`, `Audit`, `BaseDonnees`, `Clients`, `Config`, `Documents`, `Installation`,
-   `Parametres`, `Securite`, `Utilisateurs`, `Utilitaires`.
+   Fichiers à créer : `Api`, `Audit`, `BaseDonnees`, `Caisses`, `Clients`, `Config`, `Documents`,
+   `Installation`, `Parametres`, `Securite`, `Taux`, `Transactions`, `Utilisateurs`, `Utilitaires`.
 4. Supprimez le fichier `Code.gs` d'origine (clic sur les ⋮ à côté → Supprimer).
 5. Cliquez sur la **roue dentée** (Paramètres du projet, à gauche) → cochez
    **« Afficher le fichier manifeste "appsscript.json" dans l'éditeur »**.
@@ -110,7 +110,7 @@ Tests automatiques (pour un développeur) : `node --test tests/*.test.js` (Node.
 ## Mettre à jour vers une nouvelle phase
 
 1. Dans Apps Script, remplacez le contenu de **chaque** fichier par la nouvelle version du dépôt,
-   et créez les nouveaux fichiers (phase 2 : `Clients` et `Documents`).
+   et créez les nouveaux fichiers (phase 2 : `Clients`, `Documents` ; phase 3 : `Taux`, `Transactions`, `Caisses`).
 2. Enregistrez, puis dans le classeur : menu **MBC Transfert → 1. Installer / mettre à jour les tables**
    (ajoute les nouvelles colonnes et les nouveaux paramètres, sans rien effacer).
 3. **Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer**.
@@ -134,6 +134,26 @@ Tests automatiques (pour un développeur) : `node --test tests/*.test.js` (Node.
 | 12 | Rechercher par une partie du nom, du téléphone ou du numéro de pièce | Le client est trouvé |
 | 13 | Google Drive → dossier « MBC Transfert — Documents privés » → `Clients/CLI-000001` | Les photos y sont ; le dossier n'est partagé avec personne |
 | 14 | Journal d'audit | Création, photos, consultation des photos, vérification, blocage sont tracés |
+
+## Tester la phase 3 (20 minutes)
+
+| # | Action | Résultat attendu |
+|---|--------|------------------|
+| 1 | Transactions → + Nouvelle, **avant** d'avoir saisi un taux | Bandeau rouge ; création refusée « Aucun taux saisi » |
+| 2 | Taux → saisir `440` | Taux A 430, taux B 450 (marges d'exemple de 10) |
+| 3 | Saisir ensuite `480` | Demande de confirmation (écart de plus de 5 %) |
+| 4 | Nouvelle transaction flux A, 500 CAD, client vérifié | Le client paie 505,00 CAD, le bénéficiaire reçoit 215 000 FCFA ; **code à 6 chiffres affiché une fois** |
+| 5 | Confirmer le paiement sans référence, puis avec une référence Interac | Refus, puis « Paiement confirmé » ; la caisse CAD augmente |
+| 6 | Créer une 2ᵉ transaction et réutiliser la même référence Interac | Refus : référence déjà utilisée |
+| 7 | **Valider** alors que la caisse FCFA est vide | Refus : caisse FCFA insuffisante |
+| 8 | Caisses → apport de 2 000 000 FCFA, puis Valider | Validée ; la caisse FCFA montre 215 000 FCFA « promis » |
+| 9 | Autoriser la remise (nouveau client) | Refus : délai de sécurité de 24 h |
+| 10 | Après le délai : code **faux** | Refus « Code incorrect (1/5) » |
+| 11 | Bon code + numéro de pièce | « Remise autorisée » + bouton « Envoyer à la boutique (WhatsApp) » |
+| 12 | « Remise faite » sans photo, puis avec photo | Refus, puis « Payée » ; la caisse FCFA baisse de 215 000 |
+| 13 | Transaction de plus de 3 000 CAD → Valider | Mot de passe + 3 cases à cocher obligatoires |
+| 14 | Client **non vérifié** : transaction de 1 200 CAD | Refus : client non vérifié au-dessus du seuil |
+| 15 | Flux B, 1 000 CAD : confirmer (reçu boutique), valider, « Virement Interac envoyé » | Référence obligatoire ; la caisse CAD baisse de 1 000 CAD |
 
 ## Bonnes pratiques de sécurité
 

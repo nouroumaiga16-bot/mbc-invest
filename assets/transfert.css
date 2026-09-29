@@ -199,8 +199,8 @@ pre.json {
   display: flex; justify-content: space-between; gap: 12px; padding: 8px 0;
   border-bottom: 1px solid var(--bordure); word-break: break-word;
 }
-.ligne-info > span:first-child { flex: 0 0 auto; white-space: nowrap; }
-.ligne-info > span:last-child { text-align: right; font-weight: 600; min-width: 0; }
+.ligne-info > span:first-child { flex: 1 1 45%; min-width: 0; }
+.ligne-info > span:last-child { flex: 0 1 auto; text-align: right; font-weight: 600; min-width: 0; }
 
 .tuiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 @media (min-width: 720px) { .tuiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -222,3 +222,37 @@ details.ajout { margin-top: 12px; }
 details.ajout > summary { list-style: none; width: fit-content; }
 details.ajout > summary::-webkit-details-marker { display: none; }
 .sous-formulaire { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bordure); }
+
+/* ================= Phase 3 : taux, transactions, caisses ================= */
+.choix-flux { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+@media (min-width: 640px) { .choix-flux { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.puce-large { min-height: 56px; border-radius: 12px; font-size: 1rem; }
+.simulation { margin: 8px 0 16px; }
+.simulation .ligne-info:last-child { border-bottom: none; }
+.ligne-info.revenu { color: var(--texte-doux); font-style: italic; }
+.tuiles-3 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.tuile { min-width: 0; }
+.tuile-valeur.petit { font-size: .95rem; }
+.montant.negatif { color: var(--rouge); }
+.montant.positif { color: var(--vert); }
+.message-whatsapp { font-family: inherit; font-size: .95rem; max-height: none; }
+
+.chronologie { list-style: none; margin: 0; padding: 0 0 0 16px; border-left: 2px solid var(--bordure); }
+.chronologie li { position: relative; padding: 0 0 14px 12px; }
+.chronologie li::before {
+  content: ""; position: absolute; left: -23px; top: 6px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--or); border: 2px solid var(--surface);
+}
+
+.zone-graphique { position: relative; }
+.graphique { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.graphique .grille { stroke: var(--bordure); stroke-width: 1; }
+.graphique .axe { fill: var(--texte-doux); font-size: 12px; }
+.graphique .courbe { fill: none; stroke: var(--or); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.graphique .repere { stroke: var(--texte-doux); stroke-width: 1; stroke-dasharray: 3 3; }
+.graphique .point { fill: var(--or); stroke: var(--surface); stroke-width: 2; }
+.bulle {
+  position: absolute; top: 0; width: 170px; padding: 6px 8px; border-radius: 8px; font-size: .8rem;
+  background: var(--fond); border: 1px solid var(--bordure); color: var(--texte); pointer-events: none;
+}
+.ligne-info .valeur { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

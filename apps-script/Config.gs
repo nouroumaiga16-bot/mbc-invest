@@ -13,7 +13,7 @@
  */
 
 const MBT = {
-  VERSION: '1.1.0-phase2',
+  VERSION: '1.2.0-phase3',
   NOM: 'MBC Transfert',
 
   ROLES: {
@@ -124,7 +124,11 @@ const SCHEMA = {
     'ProvenanceFonds', 'MotifTransfert', 'ReferenceInterac', 'CodeRetraitHash',
     'Validation1Par', 'Validation1Le', 'Validation2Par', 'Validation2Le',
     'PayableApres', 'PieceBeneficiaireNumero', 'PreuveRemiseId', 'PayeePar', 'PayeeLe',
-    'TransactionOrigineId', 'Notes', 'CreeLe', 'CreePar', 'ModifieLe', 'ModifiePar'
+    'TransactionOrigineId', 'Notes', 'CreeLe', 'CreePar', 'ModifieLe', 'ModifiePar',
+    // Ajouts phase 3
+    'TotalClientCadCentimes', 'TotalClientFcfa', 'ReferencePaiement', 'ConfirmeePar', 'ConfirmeeLe',
+    'ReferenceVersement', 'TentativesCodeEchouees', 'RemiseAutoriseePar', 'RemiseAutoriseeLe',
+    'MotifAnnulation', 'ClotureePar', 'ClotureeLe'
   ],
   HistoriqueStatuts: [
     'Id', 'TransactionId', 'AncienStatut', 'NouveauStatut', 'DateUTC',
@@ -245,6 +249,9 @@ const PARAMETRES_DEFAUT = [
       { jusquaCad: null, fraisCad: 15 }
     ]),
     description: 'Frais fixes par transaction selon le montant (jusquaCad: null = au-delà). Exemple à ajuster.' },
+
+  { cle: 'TAUX_ECART_ALERTE_POURCENT', valeur: '5', type: 'decimal', categorie: 'Taux',
+    description: 'Un nouveau taux de référence qui s\'écarte de plus de X % du précédent demande une confirmation (anti-faute de frappe).' },
 
   // --- Règles anti-pertes ---
   { cle: 'DOUBLE_VALIDATION_SEUIL_CAD', valeur: '3000.00', type: 'cad', categorie: 'Anti-pertes',

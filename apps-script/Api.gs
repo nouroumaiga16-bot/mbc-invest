@@ -118,6 +118,32 @@ function actions_() {
       fn: function (ctx, d) { return modifierBeneficiaire_(ctx.utilisateur, d); }
     },
 
+    // --- Taux (phase 3) ---
+    'taux.etat': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return etatTaux_(d); } },
+    'taux.apercu': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return apercuTaux_(d); } },
+    'taux.saisir': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return saisirTaux_(ctx.utilisateur, d); } },
+
+    // --- Caisses (phase 3 : soldes et fonds de roulement ; complété en phase 4) ---
+    'caisses.etat': { roles: ADMIN_SEUL_, fn: function () { return etatCaisses_(); } },
+    'caisses.mouvements': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return listerMouvements_(d); } },
+    'caisses.fondsRoulement': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return mouvementFondsRoulement_(ctx.utilisateur, d); } },
+
+    // --- Transactions (phase 3) ---
+    'transactions.simuler': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return simulerTransaction_(d); } },
+    'transactions.creer': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return creerTransaction_(ctx.utilisateur, d); } },
+    'transactions.lister': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return listerTransactions_(d); } },
+    'transactions.fiche': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return ficheTransaction_(ctx.utilisateur, d); } },
+    'transactions.preuve': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return preuveTransaction_(ctx.utilisateur, d); } },
+    'transactions.confirmerPaiement': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return confirmerPaiement_(ctx.utilisateur, d); } },
+    'transactions.valider': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return validerTransaction_(ctx.utilisateur, d); } },
+    'transactions.autoriserRemise': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return autoriserRemise_(ctx.utilisateur, d); } },
+    'transactions.retirerAutorisation': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return retirerAutorisation_(ctx.utilisateur, d); } },
+    'transactions.marquerPayee': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return marquerPayee_(ctx.utilisateur, d); } },
+    'transactions.cloturer': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return cloturerTransaction_(ctx.utilisateur, d); } },
+    'transactions.annuler': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return annulerTransaction_(ctx.utilisateur, d); } },
+    'transactions.rembourser': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return rembourserTransaction_(ctx.utilisateur, d); } },
+    'transactions.debloquer': { roles: ADMIN_SEUL_, fn: function (ctx, d) { return debloquerTransaction_(ctx.utilisateur, d); } },
+
     'audit.lister': {
       roles: ADMIN_SEUL_,
       fn: function (ctx, d) { return listerJournal_(d); }

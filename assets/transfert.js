@@ -289,7 +289,7 @@
           ...[
             ['Phase 1 — Connexion, rôles, paramètres, journal d\'audit', true],
             ['Phase 2 — Clients, bénéficiaires, KYC', true],
-            ['Phase 3 — Taux et transactions', false],
+            ['Phase 3 — Taux et transactions', true],
             ['Phase 4 — Caisses, équilibre, rapprochement', false],
             ['Phase 5 — Flux internes du groupe', false],
             ['Phase 6 — Rentabilité et tableau de bord', false],

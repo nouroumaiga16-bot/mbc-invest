@@ -17,7 +17,7 @@ Outil de gestion interne du service de transfert d'argent / change **CAD ⇄ FCF
 |------:|---------|------|
 | 1 | Structure, classeur, connexion sécurisée, rôles, paramètres, journal d'audit | ✅ |
 | 2 | Clients, bénéficiaires, KYC avec photos | ✅ |
-| 3 | Taux de change, transactions et règles anti-pertes | À venir |
+| 3 | Taux de change, transactions et règles anti-pertes | ✅ |
 | 4 | Caisses, équilibre, alertes, rééquilibrage, rapprochement | À venir |
 | 5 | Flux internes du groupe | À venir |
 | 6 | Rentabilité, tableau de bord, simulateur, exports | À venir |
@@ -32,6 +32,7 @@ transfert.html          Page unique du site
 assets/transfert.css    Styles (fond noir, accents or/vert, gros boutons)
 assets/transfert.js     Écrans et appels au serveur (aucune règle métier ici)
 assets/clients.js       Écrans Clients, bénéficiaires, vérification KYC
+assets/transactions.js  Écrans Transactions, Taux (avec graphique) et Caisses
 assets/config.js        Adresse publique du serveur Apps Script (pas un secret)
 apps-script/            Code du serveur à coller dans Apps Script
   Config.gs             Tables, rôles, paramètres par défaut
@@ -41,6 +42,9 @@ apps-script/            Code du serveur à coller dans Apps Script
   Audit.gs              Journal d'audit immuable et vérification d'intégrité
   Clients.gs            Clients, bénéficiaires, vérification, contrôle KYC des transactions
   Documents.gs          Photos dans le dossier Google Drive privé
+  Taux.gs               Taux du jour, marges, historique
+  Transactions.gs       Cycle de vie des transactions et règles anti-pertes
+  Caisses.gs            Soldes réels, promis, disponibles ; fonds de roulement
   Parametres.gs         Lecture / modification des paramètres
   Utilisateurs.gs       Gestion des comptes (Admin)
   BaseDonnees.gs        Lecture / écriture des onglets (pas de suppression possible)
