@@ -1,0 +1,7 @@
+# Fichiers locaux à ne jamais publier
+.clasp.json
+.clasprc.json
+node_modules/
+*.log
+.DS_Store
+.env

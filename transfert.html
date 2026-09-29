@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0b0b0b">
+  <title>MBC Transfert</title>
+  <link rel="stylesheet" href="assets/transfert.css">
+</head>
+<body>
+  <!-- Bandeau affiché si l'adresse du serveur n'est pas encore configurée -->
+  <div id="alerte-config" class="bandeau bandeau-rouge" hidden>
+    Configuration incomplète : l'adresse du serveur n'est pas renseignée dans <code>assets/config.js</code>.
+  </div>
+
+  <!-- ÉCRAN 1 : connexion -->
+  <main id="ecran-connexion" class="ecran-centre" hidden>
+    <div class="carte carte-connexion">
+      <div class="logo">MBC <span>Transfert</span></div>
+      <p class="sous-titre">CAD ⇄ FCFA — Groupe MBC</p>
+      <form id="form-connexion" autocomplete="on">
+        <label>Identifiant
+          <input name="identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        </label>
+        <label>Mot de passe
+          <input name="motDePasse" type="password" autocomplete="current-password" required>
+        </label>
+        <p class="message-erreur" role="alert"></p>
+        <button type="submit" class="bouton bouton-or bouton-large">Se connecter</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ÉCRAN 2 : changement de mot de passe obligatoire -->
+  <main id="ecran-mdp" class="ecran-centre" hidden>
+    <div class="carte carte-connexion">
+      <h1>Choisissez votre mot de passe</h1>
+      <p class="aide">Au moins 10 caractères, avec au moins une lettre et un chiffre. Ne le communiquez à personne.</p>
+      <form id="form-mdp">
+        <label>Mot de passe actuel (temporaire)
+          <input name="ancien" type="password" autocomplete="current-password" required>
+        </label>
+        <label>Nouveau mot de passe
+          <input name="nouveau" type="password" autocomplete="new-password" minlength="10" required>
+        </label>
+        <label>Confirmer le nouveau mot de passe
+          <input name="confirmation" type="password" autocomplete="new-password" minlength="10" required>
+        </label>
+        <p class="message-erreur" role="alert"></p>
+        <button type="submit" class="bouton bouton-or bouton-large">Enregistrer</button>
+        <button type="button" class="bouton bouton-discret bouton-large" data-action="deconnexion">Se déconnecter</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ÉCRAN 3 : application -->
+  <div id="ecran-app" hidden>
+    <header class="entete">
+      <div class="logo logo-petit">MBC <span>Transfert</span></div>
+      <div class="entete-utilisateur">
+        <span id="nom-utilisateur"></span>
+        <span id="role-utilisateur" class="badge"></span>
+      </div>
+      <button type="button" class="bouton bouton-discret" data-action="deconnexion">Quitter</button>
+    </header>
+    <nav id="menu" class="menu" aria-label="Menu principal"></nav>
+    <main id="vue" class="vue"></main>
+  </div>
+
+  <!-- Fenêtre modale réutilisable -->
+  <dialog id="modale" class="modale">
+    <div id="modale-contenu"></div>
+  </dialog>
+
+  <div id="notification" class="notification" role="status" hidden></div>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/transfert.js"></script>
+</body>
+</html>
