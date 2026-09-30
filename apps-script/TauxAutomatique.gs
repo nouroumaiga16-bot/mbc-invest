@@ -89,6 +89,11 @@ function majTauxAutomatique(forcer) {
   PARAMETRES_CACHE_ = null;
   if (!lireParametreBooleen_('TAUX_AUTO_ACTIF')) return { statut: 'DESACTIVE' };
 
+  // Lecture sur Internet AVANT de prendre le verrou : les autres actions ne sont pas bloquées pendant ce temps.
+  let cours = null;
+  let erreurCours = null;
+  try { cours = lireCoursEurCad_(); } catch (e) { erreurCours = e; }
+
   return avecVerrou_(function () {
     const dernier = dernierTaux_();
     const maintenant = Date.now();
@@ -98,13 +103,9 @@ function majTauxAutomatique(forcer) {
     if (!forcer && dernier && dernier.Source !== 'AUTO' && ageDernier < 24 * 3600000) {
       return { statut: 'MANUEL_PRIORITAIRE' };
     }
-
-    let cours;
-    try {
-      cours = lireCoursEurCad_();
-    } catch (e) {
-      journaliser_(null, 'TAUX_AUTO_ECHEC', { details: { erreur: e.message } });
-      return { statut: 'ECHEC', message: e.message };
+    if (erreurCours) {
+      journaliser_(null, 'TAUX_AUTO_ECHEC', { details: { erreur: erreurCours.message } });
+      return { statut: 'ECHEC', message: erreurCours.message };
     }
 
     const reference = referenceDepuisEurCad_(cours.cours) + ecartAutoEntier_();
