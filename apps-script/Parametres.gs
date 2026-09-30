@@ -43,6 +43,11 @@ function normaliserValeurParametre_(type, valeur, libelle) {
     if (!/^\d+$/.test(brut)) throw erreur('nombre entier positif attendu.');
     return String(parseInt(brut, 10));
   }
+  if (type === 'decimal_signe') {
+    const s = brut.replace(',', '.').replace(/^\+/, '');
+    if (!/^-?\d+(\.\d+)?$/.test(s)) throw erreur('nombre attendu, positif ou négatif (ex. -3 ou 2,5).');
+    return s;
+  }
   if (type === 'decimal') {
     const s = brut.replace(',', '.');
     if (!/^\d+(\.\d+)?$/.test(s)) throw erreur('nombre positif attendu (ex. 2,5).');

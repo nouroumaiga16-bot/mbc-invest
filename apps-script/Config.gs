@@ -115,7 +115,9 @@ const SCHEMA = {
   ],
   Taux: [
     'Id', 'DateUTC', 'TauxReference', 'MargeAType', 'MargeAValeur',
-    'MargeBType', 'MargeBValeur', 'TauxFluxA', 'TauxFluxB', 'SaisiPar', 'Commentaire'
+    'MargeBType', 'MargeBValeur', 'TauxFluxA', 'TauxFluxB', 'SaisiPar', 'Commentaire',
+    // Ajout : origine du taux (AUTO = récupéré automatiquement, MANUEL = saisi par l'Admin)
+    'Source'
   ],
   Transactions: [
     'Id', 'Numero', 'Flux', 'Statut', 'ClientId', 'BeneficiaireId', 'EntiteId',
@@ -250,6 +252,10 @@ const PARAMETRES_DEFAUT = [
     ]),
     description: 'Frais fixes par transaction selon le montant (jusquaCad: null = au-delà). Exemple à ajuster.' },
 
+  { cle: 'TAUX_AUTO_ACTIF', valeur: 'OUI', type: 'booleen', categorie: 'Taux',
+    description: 'OUI : le taux de référence est mis à jour automatiquement toutes les 6 h (cours officiel BCE, FCFA fixé à l\'euro). Une saisie manuelle reste prioritaire 24 h.' },
+  { cle: 'TAUX_AUTO_ECART_FCFA', valeur: '0', type: 'decimal_signe', categorie: 'Taux',
+    description: 'Écart ajouté au taux officiel pour obtenir votre taux de référence (FCFA par CAD, ex. -3 ou 2,5). 0 = taux officiel.' },
   { cle: 'TAUX_ECART_ALERTE_POURCENT', valeur: '5', type: 'decimal', categorie: 'Taux',
     description: 'Un nouveau taux de référence qui s\'écarte de plus de X % du précédent demande une confirmation (anti-faute de frappe).' },
 

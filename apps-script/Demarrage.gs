@@ -15,6 +15,12 @@ function INSTALLER_TOUT() {
   console.log('✅ INSTALLATION TERMINÉE');
   rapport.forEach(function (ligne) { console.log('   • ' + ligne); });
 
+  // Premier taux automatique tout de suite (sans attendre la tâche des 6 h).
+  const taux = majTauxAutomatique(true);
+  console.log(taux.statut === 'ENREGISTRE'
+    ? '💱 Taux du jour enregistré automatiquement : ' + taux.tauxReference + ' FCFA pour 1 CAD (' + taux.commentaire + ')'
+    : '💱 Taux automatique : ' + taux.statut + (taux.message ? ' — ' + taux.message : ''));
+
   const adminExiste = lireTable_('Utilisateurs').some(function (u) { return u.Role === MBT.ROLES.ADMIN; });
   if (adminExiste) {
     console.log('ℹ️ Le compte Administrateur existe déjà : connectez-vous avec votre mot de passe habituel.');

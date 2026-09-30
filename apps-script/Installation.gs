@@ -142,6 +142,14 @@ function installer() {
     ScriptApp.newTrigger('nettoyerSessions').timeBased().everyDays(1).atHour(3).create();
     rapport.push('Tâche quotidienne de nettoyage des sessions planifiée.');
   }
+  // 7) Mise à jour automatique du taux toutes les 6 heures.
+  const tauxPlanifie = ScriptApp.getProjectTriggers().some(function (t) {
+    return t.getHandlerFunction() === 'majTauxAutomatique';
+  });
+  if (!tauxPlanifie) {
+    ScriptApp.newTrigger('majTauxAutomatique').timeBased().everyHours(6).create();
+    rapport.push('Mise à jour automatique du taux planifiée (toutes les 6 h).');
+  }
 
   journaliser_(null, 'INSTALLATION', { details: { version: MBT.VERSION, actions: rapport } });
 

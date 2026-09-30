@@ -107,6 +107,7 @@ function creerEnvironnement(options) {
   const ctx = {
     console: { log: (...a) => ctx.__journal.push(a.join(' ')), error: (...a) => ctx.__erreurs.push(a.join(' ')) },
     __journal: [],
+    __internet: {},
     __erreurs: [],
     __alertes: alertes,
     __reponsesPrompt: reponsesPrompt,
@@ -160,7 +161,17 @@ function creerEnvironnement(options) {
     },
     ScriptApp: {
       getProjectTriggers: () => [],
-      newTrigger: () => { const t = { timeBased: () => t, everyDays: () => t, atHour: () => t, create: () => t }; return t; }
+      newTrigger: () => { const t = { timeBased: () => t, everyDays: () => t, everyHours: () => t, atHour: () => t, create: () => t }; return t; }
+    },
+    // Faux Internet : ctx.__internet[url] = { code, texte } ; par défaut, cours BCE 1 € = 1,4723 CAD.
+    UrlFetchApp: {
+      fetch: (url) => {
+        const r = ctx.__internet[url] || (url.indexOf('ecb.europa.eu') !== -1
+          ? { code: 200, texte: "<Cube time='2026-09-29'><Cube currency='USD' rate='1.08'/><Cube currency='CAD' rate='1.4723'/></Cube>" }
+          : { code: 503, texte: '' });
+        if (r.erreurReseau) throw new Error('Réseau indisponible');
+        return { getResponseCode: () => r.code, getContentText: () => r.texte };
+      }
     },
     ContentService: {
       MimeType: { JSON: 'json' },
