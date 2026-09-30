@@ -83,6 +83,8 @@ function installer() {
     }
   });
 
+  viderCacheTables_(); // les en-têtes viennent peut-être de changer
+
   // Supprime l'onglet vide créé par défaut par Google (« Feuille 1 » / « Sheet1 »).
   ['Feuille 1', 'Sheet1', 'Feuille1'].forEach(function (nom) {
     const f = ss.getSheetByName(nom);

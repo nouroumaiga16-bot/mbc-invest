@@ -181,6 +181,7 @@ function doGet() {
  */
 function traiterDemande_(corps) {
   let nomAction = '';
+  viderCacheTables_(); // chaque demande repart de données fraîches
   try {
     let demande;
     try { demande = JSON.parse(corps || '{}'); } catch (err) {

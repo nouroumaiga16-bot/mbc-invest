@@ -629,7 +629,22 @@
         notifier('Mot de passe enregistré.');
         const moi = await api('auth.moi');
         entrerDansApp(moi.utilisateur, moi.expireLe);
-      } catch (e) { err.textContent = e.message; }
+      } catch (e) {
+        // La réponse du serveur a pu se perdre alors que le changement a réussi :
+        // on vérifie avant d'afficher une erreur (sinon un nouvel essai serait refusé).
+        if (e.code === 'RESEAU') {
+          try {
+            const moi = await api('auth.moi');
+            if (!moi.utilisateur.doitChangerMdp) {
+              fm.reset();
+              notifier('Mot de passe enregistré.');
+              entrerDansApp(moi.utilisateur, moi.expireLe);
+              return;
+            }
+          } catch (e2) { /* on affiche l'erreur d'origine */ }
+        }
+        err.textContent = e.message;
+      }
     });
 
     // Boutons « Se déconnecter » / « Quitter »
