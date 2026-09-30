@@ -9,5 +9,5 @@
  * Ne mettez JAMAIS de mot de passe, de clé ou de jeton dans ce fichier.
  */
 window.MBT_CONFIG = {
-  API_URL: 'COLLER_ICI_L_ADRESSE_DE_L_APPLICATION_WEB'
+  API_URL: 'https://script.google.com/macros/s/AKfycbwGmGOgEuTOp5q_mW8z09CajBlP5U-e1C6fRGit5304jnMfrGrcDq2FLdafMnGHS6OO3w/exec'
 };
