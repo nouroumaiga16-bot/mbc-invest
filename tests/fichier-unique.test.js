@@ -27,3 +27,19 @@ test('Le fichier unique s\'installe et permet de se connecter', () => {
   const r = JSON.parse(JSON.stringify(ctx.traiterDemande_(JSON.stringify({ action: 'auth.connexion', donnees: { identifiant: 'nourou', motDePasse: mdp } }))));
   assert.equal(r.ok, true);
 });
+
+test('INSTALLER_TOUT fonctionne depuis l\'éditeur, même sans classeur attaché ni menu', () => {
+  const ctx = creerEnvironnement({ fichierUnique: FICHIER, scriptIndependant: true });
+  assert.match(fs.readFileSync(FICHIER, 'utf8').split('function ')[1], /^INSTALLER_TOUT\(/); // première fonction du fichier
+  ctx.INSTALLER_TOUT();
+  const journal = ctx.__journal.join('\n');
+  assert.match(journal, /INSTALLATION TERMINÉE/);
+  const mdp = /Mot de passe temporaire : (\S+)/.exec(journal)[1];
+  const r = JSON.parse(JSON.stringify(ctx.traiterDemande_(JSON.stringify({ action: 'auth.connexion', donnees: { identifiant: 'nourou', motDePasse: mdp } }))));
+  assert.equal(r.ok, true);
+  // Relancer ne recrée pas de compte et n'efface rien.
+  ctx.__journal.length = 0;
+  ctx.INSTALLER_TOUT();
+  assert.match(ctx.__journal.join('\n'), /existe déjà/);
+  assert.deepEqual(ctx.__erreurs, []);
+});

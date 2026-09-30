@@ -6,6 +6,45 @@
 
 
 /* ======================================================================
+ * Demarrage.gs
+ * ====================================================================== */
+
+/**
+ * MBC Transfert — Installation en un clic depuis l'éditeur Apps Script
+ * ---------------------------------------------------------------------
+ * Mode d'emploi :
+ *   1. En haut de l'éditeur, choisissez la fonction « INSTALLER_TOUT » ;
+ *   2. cliquez sur « Exécuter » et acceptez les autorisations ;
+ *   3. lisez le résultat dans le « Journal d'exécution » (en bas) :
+ *      votre identifiant et votre MOT DE PASSE TEMPORAIRE y sont affichés.
+ *
+ * Sans danger si on la relance : rien n'est effacé, et le compte Admin
+ * n'est créé qu'une seule fois.
+ */
+function INSTALLER_TOUT() {
+  const rapport = installer();
+  console.log('✅ INSTALLATION TERMINÉE');
+  rapport.forEach(function (ligne) { console.log('   • ' + ligne); });
+
+  const adminExiste = lireTable_('Utilisateurs').some(function (u) { return u.Role === MBT.ROLES.ADMIN; });
+  if (adminExiste) {
+    console.log('ℹ️ Le compte Administrateur existe déjà : connectez-vous avec votre mot de passe habituel.');
+    return;
+  }
+  const res = creerUtilisateur_(null, {
+    identifiant: 'nourou', nomComplet: 'Nourou Maiga',
+    role: MBT.ROLES.ADMIN, fuseau: MBT.FUSEAUX.MONTREAL
+  });
+  console.log('==============================================');
+  console.log('🔑 COMPTE ADMINISTRATEUR CRÉÉ');
+  console.log('   Identifiant             : ' + res.identifiant);
+  console.log('   Mot de passe temporaire : ' + res.motDePasseTemporaire);
+  console.log('   Notez-le maintenant. Vous choisirez votre propre mot de passe à la première connexion.');
+  console.log('==============================================');
+}
+
+
+/* ======================================================================
  * Api.gs
  * ====================================================================== */
 
@@ -1554,14 +1593,42 @@ function onOpen() {
     .addToUi();
 }
 
-/** Crée ou complète tous les onglets, paramètres et éléments de base. */
+/**
+ * Interface du classeur (fenêtres, menus) si elle est disponible, sinon null.
+ * Elle ne l'est pas quand on lance une fonction depuis l'éditeur Apps Script.
+ */
+function interfaceClasseur_() {
+  try { return SpreadsheetApp.getUi(); } catch (e) { return null; }
+}
+
+/**
+ * Trouve le classeur de la base de données :
+ *  1. celui déjà enregistré lors d'une installation précédente ;
+ *  2. sinon le classeur auquel le script est attaché ;
+ *  3. sinon (script indépendant) un nouveau classeur est créé.
+ */
+function classeurPourInstallation_(rapport) {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty(MBT.PROPRIETES.CLASSEUR_ID);
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch (e) { /* classeur supprimé : on continue */ }
+  }
+  let ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { ss = null; }
+  if (!ss) {
+    ss = SpreadsheetApp.create('MBC Transfert — Base de données');
+    rapport.push('Classeur créé : ' + ss.getUrl());
+  }
+  return ss;
+}
+
+/** Crée ou complète tous les onglets, paramètres et éléments de base. Renvoie le rapport. */
 function installer() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rapport = [];
+  const ss = classeurPourInstallation_(rapport);
   const props = PropertiesService.getScriptProperties();
   props.setProperty(MBT.PROPRIETES.CLASSEUR_ID, ss.getId());
   CLASSEUR_CACHE_ = ss;
-
-  const rapport = [];
 
   // 1) Onglets et en-têtes (JournalAudit est créé comme les autres, avant toute journalisation).
   Object.keys(SCHEMA).forEach(function (table) {
@@ -1651,10 +1718,14 @@ function installer() {
 
   journaliser_(null, 'INSTALLATION', { details: { version: MBT.VERSION, actions: rapport } });
 
-  SpreadsheetApp.getUi().alert('MBC Transfert — Installation terminée',
-    (rapport.length ? rapport.join('\n') : 'Tout était déjà en place, rien à modifier.') +
-    '\n\nÉtape suivante : menu MBC Transfert → « 2. Créer le compte Administrateur ».',
-    SpreadsheetApp.getUi().ButtonSet.OK);
+  const ui = interfaceClasseur_();
+  if (ui) {
+    ui.alert('MBC Transfert — Installation terminée',
+      (rapport.length ? rapport.join('\n') : 'Tout était déjà en place, rien à modifier.') +
+      '\n\nÉtape suivante : menu MBC Transfert → « 2. Créer le compte Administrateur ».',
+      ui.ButtonSet.OK);
+  }
+  return rapport;
 }
 
 /**
@@ -1690,7 +1761,9 @@ function creerAdministrateurInitial() {
 /** Vérifie la chaîne d'empreintes du journal d'audit et affiche le résultat. */
 function menuVerifierJournal() {
   const r = verifierIntegriteJournal_();
-  SpreadsheetApp.getUi().alert(r.integre ? '✅ ' + r.message : '⚠️ ALERTE : ' + r.message);
+  const texte = r.integre ? '✅ ' + r.message : '⚠️ ALERTE : ' + r.message;
+  const ui = interfaceClasseur_();
+  if (ui) ui.alert(texte); else console.log(texte);
 }
 
 

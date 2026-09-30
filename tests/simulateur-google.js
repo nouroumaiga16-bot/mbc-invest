@@ -73,6 +73,7 @@ function creerEnvironnement(options) {
   const ordre = [];
   const classeur = {
     getId: () => 'CLASSEUR-TEST',
+    getUrl: () => 'https://docs.google.com/spreadsheets/d/CLASSEUR-TEST',
     getSheetByName: (n) => feuilles[n] || null,
     insertSheet: (n) => { feuilles[n] = creerFeuille(n); ordre.push(n); return feuilles[n]; },
     getSheets: () => ordre.map(n => feuilles[n]),
@@ -104,7 +105,8 @@ function creerEnvironnement(options) {
   const reponsesPrompt = [];
 
   const ctx = {
-    console: { log: () => {}, error: (...a) => ctx.__erreurs.push(a.join(' ')) },
+    console: { log: (...a) => ctx.__journal.push(a.join(' ')), error: (...a) => ctx.__erreurs.push(a.join(' ')) },
+    __journal: [],
     __erreurs: [],
     __alertes: alertes,
     __reponsesPrompt: reponsesPrompt,
@@ -130,17 +132,19 @@ function creerEnvironnement(options) {
       newBlob: (octets, mime, nom) => ({ octets, mime, nom, getBytes: () => octets, getContentType: () => mime, getName: () => nom })
     },
     SpreadsheetApp: {
-      getActiveSpreadsheet: () => classeur,
+      // Option « scriptIndependant » : script lancé depuis l'éditeur, sans classeur attaché ni interface.
+      getActiveSpreadsheet: () => (options && options.scriptIndependant ? null : classeur),
       openById: () => classeur,
+      create: () => classeur,
       flush: () => {},
       ProtectionType: { SHEET: 'SHEET' },
-      getUi: () => ({
+      getUi: () => { if (options && options.scriptIndependant) throw new Error('Cannot call SpreadsheetApp.getUi() from this context'); return {
         alert: (...a) => { alertes.push(a.filter(x => typeof x === 'string').join(' | ')); },
         prompt: () => ({ getSelectedButton: () => 'OK', getResponseText: () => reponsesPrompt.shift() }),
         ButtonSet: { OK: 'OK', OK_CANCEL: 'OK_CANCEL' },
         Button: { OK: 'OK' },
         createMenu: () => { const m = { addItem: () => m, addSeparator: () => m, addToUi: () => m }; return m; }
-      })
+      }; }
     },
     PropertiesService: {
       getScriptProperties: () => ({

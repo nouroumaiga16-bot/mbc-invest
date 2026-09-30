@@ -7,7 +7,9 @@
 const fs = require('fs');
 const path = require('path');
 const dossier = path.join(__dirname, '..', 'apps-script');
-const fichiers = fs.readdirSync(dossier).filter((f) => f.endsWith('.gs')).sort();
+// Demarrage.gs en premier : sa fonction INSTALLER_TOUT est alors celle proposée par défaut dans l'éditeur.
+const fichiers = fs.readdirSync(dossier).filter((f) => f.endsWith('.gs')).sort()
+  .sort((a, b) => (a === 'Demarrage.gs' ? -1 : b === 'Demarrage.gs' ? 1 : 0));
 let sortie = '/**\n * MBC Transfert — serveur complet en un seul fichier.\n' +
   ' * Fichier GÉNÉRÉ automatiquement à partir du dossier apps-script/ : ne pas modifier à la main.\n' +
   ' * Copiez TOUT ce fichier dans le fichier « Code.gs » de votre projet Apps Script.\n */\n';
