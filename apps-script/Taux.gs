@@ -98,7 +98,7 @@ function saisirTaux_(u, d) {
       MargeAType: c.typeA, MargeAValeur: lireParametre_('MARGE_A_VALEUR'),
       MargeBType: c.typeB, MargeBValeur: lireParametre_('MARGE_B_VALEUR'),
       TauxFluxA: entierVersTaux_(c.tauxA), TauxFluxB: entierVersTaux_(c.tauxB),
-      SaisiPar: u.Id, Commentaire: String(d.commentaire || '').slice(0, 300)
+      SaisiPar: u.Id, Commentaire: String(d.commentaire || '').slice(0, 300), Source: 'MANUEL'
     });
     journaliser_(u, 'TAUX_SAISI', { table: 'Taux', id: ligne.Id, apres: ligne });
     return { id: ligne.Id, tauxReference: ligne.TauxReference, tauxFluxA: ligne.TauxFluxA, tauxFluxB: ligne.TauxFluxB };
@@ -114,11 +114,12 @@ function etatTaux_(d) {
   return {
     actuel: t ? {
       dateUTC: t.DateUTC, tauxReference: t.TauxReference, tauxFluxA: t.TauxFluxA, tauxFluxB: t.TauxFluxB,
+      source: t.Source || 'MANUEL', commentaire: t.Commentaire,
       perime: Date.now() - Date.parse(t.DateUTC) > heures * 3600000
     } : null,
     validiteHeures: heures,
     historique: liste.slice(0, limite).map(function (x) {
-      return { dateUTC: x.DateUTC, tauxReference: x.TauxReference, tauxFluxA: x.TauxFluxA, tauxFluxB: x.TauxFluxB, commentaire: x.Commentaire };
+      return { dateUTC: x.DateUTC, tauxReference: x.TauxReference, tauxFluxA: x.TauxFluxA, tauxFluxB: x.TauxFluxB, commentaire: x.Commentaire, source: x.Source || 'MANUEL' };
     })
   };
 }

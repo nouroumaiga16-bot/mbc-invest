@@ -43,12 +43,15 @@ apps-script/            Code du serveur à coller dans Apps Script
   Clients.gs            Clients, bénéficiaires, vérification, contrôle KYC des transactions
   Documents.gs          Photos dans le dossier Google Drive privé
   Taux.gs               Taux du jour, marges, historique
+  TauxAutomatique.gs    Taux mis à jour tout seul toutes les 6 h (cours BCE, FCFA fixé à l'euro)
+  Demarrage.gs          INSTALLER_TOUT : installation en un clic depuis l'éditeur
   Transactions.gs       Cycle de vie des transactions et règles anti-pertes
   Caisses.gs            Soldes réels, promis, disponibles ; fonds de roulement
   Parametres.gs         Lecture / modification des paramètres
   Utilisateurs.gs       Gestion des comptes (Admin)
   BaseDonnees.gs        Lecture / écriture des onglets (pas de suppression possible)
   Utilitaires.gs        Montants en entiers, dates UTC, verrous
+installation/Code.gs    Tout le serveur en un seul fichier à copier (généré : npm run regrouper)
 tests/                  Tests automatiques (simulent Google sur un ordinateur)
 docs/DEPLOIEMENT.md     Guide d'installation
 ```

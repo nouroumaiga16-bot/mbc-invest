@@ -6,6 +6,51 @@
 
 
 /* ======================================================================
+ * Demarrage.gs
+ * ====================================================================== */
+
+/**
+ * MBC Transfert — Installation en un clic depuis l'éditeur Apps Script
+ * ---------------------------------------------------------------------
+ * Mode d'emploi :
+ *   1. En haut de l'éditeur, choisissez la fonction « INSTALLER_TOUT » ;
+ *   2. cliquez sur « Exécuter » et acceptez les autorisations ;
+ *   3. lisez le résultat dans le « Journal d'exécution » (en bas) :
+ *      votre identifiant et votre MOT DE PASSE TEMPORAIRE y sont affichés.
+ *
+ * Sans danger si on la relance : rien n'est effacé, et le compte Admin
+ * n'est créé qu'une seule fois.
+ */
+function INSTALLER_TOUT() {
+  const rapport = installer();
+  console.log('✅ INSTALLATION TERMINÉE');
+  rapport.forEach(function (ligne) { console.log('   • ' + ligne); });
+
+  // Premier taux automatique tout de suite (sans attendre la tâche des 6 h).
+  const taux = majTauxAutomatique(true);
+  console.log(taux.statut === 'ENREGISTRE'
+    ? '💱 Taux du jour enregistré automatiquement : ' + taux.tauxReference + ' FCFA pour 1 CAD (' + taux.commentaire + ')'
+    : '💱 Taux automatique : ' + taux.statut + (taux.message ? ' — ' + taux.message : ''));
+
+  const adminExiste = lireTable_('Utilisateurs').some(function (u) { return u.Role === MBT.ROLES.ADMIN; });
+  if (adminExiste) {
+    console.log('ℹ️ Le compte Administrateur existe déjà : connectez-vous avec votre mot de passe habituel.');
+    return;
+  }
+  const res = creerUtilisateur_(null, {
+    identifiant: 'nourou', nomComplet: 'Nourou Maiga',
+    role: MBT.ROLES.ADMIN, fuseau: MBT.FUSEAUX.MONTREAL
+  });
+  console.log('==============================================');
+  console.log('🔑 COMPTE ADMINISTRATEUR CRÉÉ');
+  console.log('   Identifiant             : ' + res.identifiant);
+  console.log('   Mot de passe temporaire : ' + res.motDePasseTemporaire);
+  console.log('   Notez-le maintenant. Vous choisirez votre propre mot de passe à la première connexion.');
+  console.log('==============================================');
+}
+
+
+/* ======================================================================
  * Api.gs
  * ====================================================================== */
 
@@ -1271,7 +1316,9 @@ const SCHEMA = {
   ],
   Taux: [
     'Id', 'DateUTC', 'TauxReference', 'MargeAType', 'MargeAValeur',
-    'MargeBType', 'MargeBValeur', 'TauxFluxA', 'TauxFluxB', 'SaisiPar', 'Commentaire'
+    'MargeBType', 'MargeBValeur', 'TauxFluxA', 'TauxFluxB', 'SaisiPar', 'Commentaire',
+    // Ajout : origine du taux (AUTO = récupéré automatiquement, MANUEL = saisi par l'Admin)
+    'Source'
   ],
   Transactions: [
     'Id', 'Numero', 'Flux', 'Statut', 'ClientId', 'BeneficiaireId', 'EntiteId',
@@ -1406,6 +1453,10 @@ const PARAMETRES_DEFAUT = [
     ]),
     description: 'Frais fixes par transaction selon le montant (jusquaCad: null = au-delà). Exemple à ajuster.' },
 
+  { cle: 'TAUX_AUTO_ACTIF', valeur: 'OUI', type: 'booleen', categorie: 'Taux',
+    description: 'OUI : le taux de référence est mis à jour automatiquement toutes les 6 h (cours officiel BCE, FCFA fixé à l\'euro). Une saisie manuelle reste prioritaire 24 h.' },
+  { cle: 'TAUX_AUTO_ECART_FCFA', valeur: '0', type: 'decimal_signe', categorie: 'Taux',
+    description: 'Écart ajouté au taux officiel pour obtenir votre taux de référence (FCFA par CAD, ex. -3 ou 2,5). 0 = taux officiel.' },
   { cle: 'TAUX_ECART_ALERTE_POURCENT', valeur: '5', type: 'decimal', categorie: 'Taux',
     description: 'Un nouveau taux de référence qui s\'écarte de plus de X % du précédent demande une confirmation (anti-faute de frappe).' },
 
@@ -1554,14 +1605,42 @@ function onOpen() {
     .addToUi();
 }
 
-/** Crée ou complète tous les onglets, paramètres et éléments de base. */
+/**
+ * Interface du classeur (fenêtres, menus) si elle est disponible, sinon null.
+ * Elle ne l'est pas quand on lance une fonction depuis l'éditeur Apps Script.
+ */
+function interfaceClasseur_() {
+  try { return SpreadsheetApp.getUi(); } catch (e) { return null; }
+}
+
+/**
+ * Trouve le classeur de la base de données :
+ *  1. celui déjà enregistré lors d'une installation précédente ;
+ *  2. sinon le classeur auquel le script est attaché ;
+ *  3. sinon (script indépendant) un nouveau classeur est créé.
+ */
+function classeurPourInstallation_(rapport) {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty(MBT.PROPRIETES.CLASSEUR_ID);
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch (e) { /* classeur supprimé : on continue */ }
+  }
+  let ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { ss = null; }
+  if (!ss) {
+    ss = SpreadsheetApp.create('MBC Transfert — Base de données');
+    rapport.push('Classeur créé : ' + ss.getUrl());
+  }
+  return ss;
+}
+
+/** Crée ou complète tous les onglets, paramètres et éléments de base. Renvoie le rapport. */
 function installer() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rapport = [];
+  const ss = classeurPourInstallation_(rapport);
   const props = PropertiesService.getScriptProperties();
   props.setProperty(MBT.PROPRIETES.CLASSEUR_ID, ss.getId());
   CLASSEUR_CACHE_ = ss;
-
-  const rapport = [];
 
   // 1) Onglets et en-têtes (JournalAudit est créé comme les autres, avant toute journalisation).
   Object.keys(SCHEMA).forEach(function (table) {
@@ -1648,13 +1727,25 @@ function installer() {
     ScriptApp.newTrigger('nettoyerSessions').timeBased().everyDays(1).atHour(3).create();
     rapport.push('Tâche quotidienne de nettoyage des sessions planifiée.');
   }
+  // 7) Mise à jour automatique du taux toutes les 6 heures.
+  const tauxPlanifie = ScriptApp.getProjectTriggers().some(function (t) {
+    return t.getHandlerFunction() === 'majTauxAutomatique';
+  });
+  if (!tauxPlanifie) {
+    ScriptApp.newTrigger('majTauxAutomatique').timeBased().everyHours(6).create();
+    rapport.push('Mise à jour automatique du taux planifiée (toutes les 6 h).');
+  }
 
   journaliser_(null, 'INSTALLATION', { details: { version: MBT.VERSION, actions: rapport } });
 
-  SpreadsheetApp.getUi().alert('MBC Transfert — Installation terminée',
-    (rapport.length ? rapport.join('\n') : 'Tout était déjà en place, rien à modifier.') +
-    '\n\nÉtape suivante : menu MBC Transfert → « 2. Créer le compte Administrateur ».',
-    SpreadsheetApp.getUi().ButtonSet.OK);
+  const ui = interfaceClasseur_();
+  if (ui) {
+    ui.alert('MBC Transfert — Installation terminée',
+      (rapport.length ? rapport.join('\n') : 'Tout était déjà en place, rien à modifier.') +
+      '\n\nÉtape suivante : menu MBC Transfert → « 2. Créer le compte Administrateur ».',
+      ui.ButtonSet.OK);
+  }
+  return rapport;
 }
 
 /**
@@ -1690,7 +1781,9 @@ function creerAdministrateurInitial() {
 /** Vérifie la chaîne d'empreintes du journal d'audit et affiche le résultat. */
 function menuVerifierJournal() {
   const r = verifierIntegriteJournal_();
-  SpreadsheetApp.getUi().alert(r.integre ? '✅ ' + r.message : '⚠️ ALERTE : ' + r.message);
+  const texte = r.integre ? '✅ ' + r.message : '⚠️ ALERTE : ' + r.message;
+  const ui = interfaceClasseur_();
+  if (ui) ui.alert(texte); else console.log(texte);
 }
 
 
@@ -1742,6 +1835,11 @@ function normaliserValeurParametre_(type, valeur, libelle) {
   if (type === 'entier') {
     if (!/^\d+$/.test(brut)) throw erreur('nombre entier positif attendu.');
     return String(parseInt(brut, 10));
+  }
+  if (type === 'decimal_signe') {
+    const s = brut.replace(',', '.').replace(/^\+/, '');
+    if (!/^-?\d+(\.\d+)?$/.test(s)) throw erreur('nombre attendu, positif ou négatif (ex. -3 ou 2,5).');
+    return s;
   }
   if (type === 'decimal') {
     const s = brut.replace(',', '.');
@@ -2183,7 +2281,7 @@ function saisirTaux_(u, d) {
       MargeAType: c.typeA, MargeAValeur: lireParametre_('MARGE_A_VALEUR'),
       MargeBType: c.typeB, MargeBValeur: lireParametre_('MARGE_B_VALEUR'),
       TauxFluxA: entierVersTaux_(c.tauxA), TauxFluxB: entierVersTaux_(c.tauxB),
-      SaisiPar: u.Id, Commentaire: String(d.commentaire || '').slice(0, 300)
+      SaisiPar: u.Id, Commentaire: String(d.commentaire || '').slice(0, 300), Source: 'MANUEL'
     });
     journaliser_(u, 'TAUX_SAISI', { table: 'Taux', id: ligne.Id, apres: ligne });
     return { id: ligne.Id, tauxReference: ligne.TauxReference, tauxFluxA: ligne.TauxFluxA, tauxFluxB: ligne.TauxFluxB };
@@ -2199,13 +2297,161 @@ function etatTaux_(d) {
   return {
     actuel: t ? {
       dateUTC: t.DateUTC, tauxReference: t.TauxReference, tauxFluxA: t.TauxFluxA, tauxFluxB: t.TauxFluxB,
+      source: t.Source || 'MANUEL', commentaire: t.Commentaire,
       perime: Date.now() - Date.parse(t.DateUTC) > heures * 3600000
     } : null,
     validiteHeures: heures,
     historique: liste.slice(0, limite).map(function (x) {
-      return { dateUTC: x.DateUTC, tauxReference: x.TauxReference, tauxFluxA: x.TauxFluxA, tauxFluxB: x.TauxFluxB, commentaire: x.Commentaire };
+      return { dateUTC: x.DateUTC, tauxReference: x.TauxReference, tauxFluxA: x.TauxFluxA, tauxFluxB: x.TauxFluxB, commentaire: x.Commentaire, source: x.Source || 'MANUEL' };
     })
   };
+}
+
+
+/* ======================================================================
+ * TauxAutomatique.gs
+ * ====================================================================== */
+
+/**
+ * MBC Transfert — Taux de change automatique
+ * -------------------------------------------
+ * Le FCFA (XOF) est fixé à l'euro : 1 € = 655,957 FCFA, toujours.
+ * Le taux CAD → FCFA se déduit donc du seul cours officiel EUR → CAD :
+ *     FCFA pour 1 CAD = 655,957 ÷ (CAD pour 1 €)
+ *
+ * Toutes les 6 heures (tâche automatique), l'outil :
+ *  1. lit le cours EUR/CAD officiel de la Banque centrale européenne
+ *     (source de secours : Frankfurter, qui republie les mêmes cours BCE) ;
+ *  2. calcule le taux de référence, ajoute l'écart choisi (paramètre TAUX_AUTO_ECART_FCFA) ;
+ *  3. enregistre le taux si c'est nécessaire (nouveau cours, ou dernier taux de plus de 20 h).
+ *
+ * Garde-fous :
+ *  - une saisie manuelle de l'Admin reste prioritaire pendant 24 h ;
+ *  - un écart anormal avec le taux précédent n'est PAS enregistré (erreur de source possible) :
+ *    l'événement est inscrit au journal et l'Admin saisit le taux à la main s'il le confirme ;
+ *  - si Internet ou la source sont indisponibles, rien n'est enregistré : l'ancien taux
+ *    reste valable jusqu'à 24 h, puis les créations de transactions sont bloquées (sécurité).
+ */
+
+const FCFA_PAR_EURO_ENTIER_ = 6559570; // 655,957 FCFA pour 1 €, en dix-millièmes
+
+/** Sources du cours EUR → CAD, essayées dans l'ordre. */
+function sourcesCoursEurCad_() {
+  return [
+    {
+      nom: 'BCE',
+      url: 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml',
+      lire: function (texte) {
+        const cours = /currency=['"]CAD['"]\s+rate=['"]([\d.]+)['"]/.exec(texte);
+        const date = /time=['"](\d{4}-\d{2}-\d{2})['"]/.exec(texte);
+        return cours ? { cours: cours[1], date: date ? date[1] : '' } : null;
+      }
+    },
+    {
+      nom: 'Frankfurter (BCE)',
+      url: 'https://api.frankfurter.app/latest?from=EUR&to=CAD',
+      lire: function (texte) {
+        const j = JSON.parse(texte);
+        return j && j.rates && j.rates.CAD ? { cours: String(j.rates.CAD), date: j.date || '' } : null;
+      }
+    }
+  ];
+}
+
+/** Lit le cours EUR → CAD (en dix-millièmes, ex. 1,4723 → 14723). */
+function lireCoursEurCad_() {
+  const erreurs = [];
+  const sources = sourcesCoursEurCad_();
+  for (let i = 0; i < sources.length; i++) {
+    const s = sources[i];
+    try {
+      const r = UrlFetchApp.fetch(s.url, { muteHttpExceptions: true, followRedirects: true });
+      if (r.getResponseCode() !== 200) throw new Error('réponse ' + r.getResponseCode());
+      const res = s.lire(r.getContentText());
+      if (!res) throw new Error('cours CAD absent');
+      const cours = Math.round(parseFloat(res.cours) * ECHELLE_TAUX_);
+      // Contrôle de vraisemblance : 1 € vaut entre 0,50 et 5,00 CAD.
+      if (!(cours >= 5000 && cours <= 50000)) throw new Error('cours invraisemblable : ' + res.cours);
+      return { source: s.nom, cours: cours, date: res.date };
+    } catch (e) {
+      erreurs.push(s.nom + ' : ' + e.message);
+    }
+  }
+  throw new Error('Cours EUR/CAD indisponible (' + erreurs.join(' ; ') + ')');
+}
+
+/** Taux de référence (FCFA pour 1 CAD, dix-millièmes) à partir du cours EUR → CAD. */
+function referenceDepuisEurCad_(coursEurCad) {
+  return Math.round(FCFA_PAR_EURO_ENTIER_ * ECHELLE_TAUX_ / coursEurCad);
+}
+
+/** Écart choisi par l'Admin (peut être négatif), en dix-millièmes. */
+function ecartAutoEntier_() {
+  const v = String(lireParametre_('TAUX_AUTO_ECART_FCFA')).trim().replace(',', '.').replace(/^\+/, '');
+  const negatif = v.charAt(0) === '-';
+  const n = tauxVersEntier_(negatif ? v.slice(1) : v, 'Écart du taux automatique');
+  return negatif ? -n : n;
+}
+
+/**
+ * Mise à jour automatique du taux (appelée toutes les 6 h par la tâche planifiée,
+ * ou à la main). forcer === true : ignore la priorité de la saisie manuelle.
+ * Renvoie { statut, ... } : ENREGISTRE, INCHANGE, MANUEL_PRIORITAIRE, ECART_SUSPECT, ECHEC, DESACTIVE.
+ */
+function majTauxAutomatique(forcer) {
+  forcer = forcer === true; // la tâche planifiée passe un objet « événement » : on l'ignore
+  PARAMETRES_CACHE_ = null;
+  if (!lireParametreBooleen_('TAUX_AUTO_ACTIF')) return { statut: 'DESACTIVE' };
+
+  return avecVerrou_(function () {
+    const dernier = dernierTaux_();
+    const maintenant = Date.now();
+    const ageDernier = dernier ? maintenant - Date.parse(dernier.DateUTC) : Infinity;
+
+    // Un taux saisi à la main il y a moins de 24 h reste prioritaire.
+    if (!forcer && dernier && dernier.Source !== 'AUTO' && ageDernier < 24 * 3600000) {
+      return { statut: 'MANUEL_PRIORITAIRE' };
+    }
+
+    let cours;
+    try {
+      cours = lireCoursEurCad_();
+    } catch (e) {
+      journaliser_(null, 'TAUX_AUTO_ECHEC', { details: { erreur: e.message } });
+      return { statut: 'ECHEC', message: e.message };
+    }
+
+    const reference = referenceDepuisEurCad_(cours.cours) + ecartAutoEntier_();
+    const commentaire = 'Automatique — ' + cours.source + (cours.date ? ' du ' + cours.date : '') +
+      ' : 1 EUR = ' + entierVersTaux_(cours.cours).replace(/0+$/, '').replace(/\.$/, '') + ' CAD';
+
+    if (dernier) {
+      const ancien = tauxVersEntier_(dernier.TauxReference);
+      const ecartPct = Math.abs(reference - ancien) * 100 / ancien;
+      if (ecartPct > lireParametreDecimal_('TAUX_ECART_ALERTE_POURCENT')) {
+        journaliser_(null, 'TAUX_AUTO_REFUSE', { details: {
+          motif: 'Écart anormal avec le taux précédent', ecartPourcent: ecartPct.toFixed(2),
+          ancien: dernier.TauxReference, propose: entierVersTaux_(reference), source: commentaire } });
+        return { statut: 'ECART_SUSPECT', message: 'Écart de ' + ecartPct.toFixed(1) + ' % avec le taux précédent : non enregistré.' };
+      }
+      // Même valeur et taux automatique encore récent : inutile d'ajouter une ligne.
+      if (!forcer && reference === ancien && dernier.Source === 'AUTO' && ageDernier < 20 * 3600000) {
+        return { statut: 'INCHANGE' };
+      }
+    }
+
+    const c = calculerTaux_(reference);
+    const ligne = ajouterLigne_('Taux', {
+      Id: genererId_('TAUX'), DateUTC: maintenantUTC_(),
+      TauxReference: entierVersTaux_(c.reference),
+      MargeAType: c.typeA, MargeAValeur: lireParametre_('MARGE_A_VALEUR'),
+      MargeBType: c.typeB, MargeBValeur: lireParametre_('MARGE_B_VALEUR'),
+      TauxFluxA: entierVersTaux_(c.tauxA), TauxFluxB: entierVersTaux_(c.tauxB),
+      SaisiPar: 'AUTOMATIQUE', Commentaire: commentaire, Source: 'AUTO'
+    });
+    journaliser_(null, 'TAUX_AUTO', { table: 'Taux', id: ligne.Id, apres: ligne });
+    return { statut: 'ENREGISTRE', tauxReference: ligne.TauxReference, commentaire: commentaire };
+  });
 }
 
 

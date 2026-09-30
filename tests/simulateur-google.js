@@ -73,6 +73,7 @@ function creerEnvironnement(options) {
   const ordre = [];
   const classeur = {
     getId: () => 'CLASSEUR-TEST',
+    getUrl: () => 'https://docs.google.com/spreadsheets/d/CLASSEUR-TEST',
     getSheetByName: (n) => feuilles[n] || null,
     insertSheet: (n) => { feuilles[n] = creerFeuille(n); ordre.push(n); return feuilles[n]; },
     getSheets: () => ordre.map(n => feuilles[n]),
@@ -104,7 +105,9 @@ function creerEnvironnement(options) {
   const reponsesPrompt = [];
 
   const ctx = {
-    console: { log: () => {}, error: (...a) => ctx.__erreurs.push(a.join(' ')) },
+    console: { log: (...a) => ctx.__journal.push(a.join(' ')), error: (...a) => ctx.__erreurs.push(a.join(' ')) },
+    __journal: [],
+    __internet: {},
     __erreurs: [],
     __alertes: alertes,
     __reponsesPrompt: reponsesPrompt,
@@ -130,17 +133,19 @@ function creerEnvironnement(options) {
       newBlob: (octets, mime, nom) => ({ octets, mime, nom, getBytes: () => octets, getContentType: () => mime, getName: () => nom })
     },
     SpreadsheetApp: {
-      getActiveSpreadsheet: () => classeur,
+      // Option « scriptIndependant » : script lancé depuis l'éditeur, sans classeur attaché ni interface.
+      getActiveSpreadsheet: () => (options && options.scriptIndependant ? null : classeur),
       openById: () => classeur,
+      create: () => classeur,
       flush: () => {},
       ProtectionType: { SHEET: 'SHEET' },
-      getUi: () => ({
+      getUi: () => { if (options && options.scriptIndependant) throw new Error('Cannot call SpreadsheetApp.getUi() from this context'); return {
         alert: (...a) => { alertes.push(a.filter(x => typeof x === 'string').join(' | ')); },
         prompt: () => ({ getSelectedButton: () => 'OK', getResponseText: () => reponsesPrompt.shift() }),
         ButtonSet: { OK: 'OK', OK_CANCEL: 'OK_CANCEL' },
         Button: { OK: 'OK' },
         createMenu: () => { const m = { addItem: () => m, addSeparator: () => m, addToUi: () => m }; return m; }
-      })
+      }; }
     },
     PropertiesService: {
       getScriptProperties: () => ({
@@ -156,7 +161,17 @@ function creerEnvironnement(options) {
     },
     ScriptApp: {
       getProjectTriggers: () => [],
-      newTrigger: () => { const t = { timeBased: () => t, everyDays: () => t, atHour: () => t, create: () => t }; return t; }
+      newTrigger: () => { const t = { timeBased: () => t, everyDays: () => t, everyHours: () => t, atHour: () => t, create: () => t }; return t; }
+    },
+    // Faux Internet : ctx.__internet[url] = { code, texte } ; par défaut, cours BCE 1 € = 1,4723 CAD.
+    UrlFetchApp: {
+      fetch: (url) => {
+        const r = ctx.__internet[url] || (url.indexOf('ecb.europa.eu') !== -1
+          ? { code: 200, texte: "<Cube time='2026-09-29'><Cube currency='USD' rate='1.08'/><Cube currency='CAD' rate='1.4723'/></Cube>" }
+          : { code: 503, texte: '' });
+        if (r.erreurReseau) throw new Error('Réseau indisponible');
+        return { getResponseCode: () => r.code, getContentText: () => r.texte };
+      }
     },
     ContentService: {
       MimeType: { JSON: 'json' },

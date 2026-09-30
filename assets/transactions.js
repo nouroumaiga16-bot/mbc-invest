@@ -477,7 +477,7 @@
       }, 350);
     });
     const form = el('form', { class: 'carte', novalidate: true },
-      el('h2', {}, 'Saisir le taux du jour'),
+      el('h2', {}, 'Saisir un taux à la main (facultatif)'),
       el('label', {}, 'Taux de référence du marché (FCFA pour 1 CAD)', reference), apercu,
       el('label', {}, 'Commentaire (facultatif, ex. source du taux)', el('input', { name: 'commentaire', autocomplete: 'off' })),
       erreur, el('button', { type: 'submit', class: 'bouton bouton-or' }, 'Enregistrer le taux'));
@@ -506,8 +506,11 @@
               el('div', { class: 'tuile' }, el('div', { class: 'aide' }, 'Référence'), el('div', { class: 'tuile-valeur' }, tauxLisible(a.tauxReference))),
               el('div', { class: 'tuile' }, el('div', { class: 'aide' }, 'Flux A (envoi)'), el('div', { class: 'tuile-valeur' }, tauxLisible(a.tauxFluxA))),
               el('div', { class: 'tuile' }, el('div', { class: 'aide' }, 'Flux B (achat CAD)'), el('div', { class: 'tuile-valeur' }, tauxLisible(a.tauxFluxB))),
-              el('div', { class: 'tuile' }, el('div', { class: 'aide' }, 'Saisi le'), el('div', { class: 'tuile-valeur petit' }, M.formatDate(a.dateUTC))))),
-        el('p', { class: 'aide' }, 'Les marges se règlent dans Paramètres (MARGE_A_*, MARGE_B_*).')),
+              el('div', { class: 'tuile' }, el('div', { class: 'aide' }, a.source === 'AUTO' ? 'Mis à jour automatiquement le' : 'Saisi à la main le'), el('div', { class: 'tuile-valeur petit' }, M.formatDate(a.dateUTC))))),
+        a && a.source === 'AUTO' ? el('p', { class: 'aide' }, a.commentaire) : null,
+        el('p', { class: 'aide' }, 'Le taux se met à jour tout seul toutes les 6 h (cours officiel BCE : le FCFA est fixé à l\'euro). ',
+          'Si vous saisissez un taux à la main, il reste prioritaire pendant 24 h. ',
+          'Marges et écart avec le taux officiel : menu Paramètres (MARGE_A_*, MARGE_B_*, TAUX_AUTO_ECART_FCFA).')),
       form,
       el('div', { class: 'carte' }, el('h2', {}, 'Évolution du taux de référence'), graphiqueTaux(e.historique),
         el('details', {}, el('summary', { class: 'aide' }, 'Voir le tableau'),
