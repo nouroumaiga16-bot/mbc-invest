@@ -37,3 +37,32 @@ function INSTALLER_TOUT() {
   console.log('   Notez-le maintenant. Vous choisirez votre propre mot de passe à la première connexion.');
   console.log('==============================================');
 }
+
+/**
+ * Mot de passe perdu ou oublié : génère un nouveau mot de passe temporaire
+ * pour le compte « nourou », débloque le compte et ferme les sessions ouvertes.
+ * Mode d'emploi : choisir « REINITIALISER_MOT_DE_PASSE » en haut de l'éditeur,
+ * cliquer sur « Exécuter », puis lire le mot de passe dans le Journal d'exécution.
+ * (Seul le propriétaire du projet Apps Script peut faire cela.)
+ */
+function REINITIALISER_MOT_DE_PASSE() {
+  const u = trouverPar_('Utilisateurs', 'Identifiant', 'nourou') ||
+    lireTable_('Utilisateurs').filter(function (x) { return x.Role === MBT.ROLES.ADMIN; })[0];
+  if (!u) {
+    console.log('Aucun compte Administrateur : lancez INSTALLER_TOUT.');
+    return;
+  }
+  const mdp = genererMdpTemporaire_();
+  modifierLigne_('Utilisateurs', u.Id, {
+    MotDePasseHash: creerEmpreinteMdp_(mdp), DoitChangerMdp: 'OUI', Actif: 'OUI',
+    TentativesEchouees: '0', BloqueJusqua: '', ModifieLe: maintenantUTC_(), ModifiePar: 'EDITEUR_APPS_SCRIPT'
+  });
+  fermerSessionsUtilisateur_(u.Id, 'Mot de passe réinitialisé depuis l\'éditeur');
+  journaliser_(null, 'MDP_REINITIALISE', { table: 'Utilisateurs', id: u.Id, details: { origine: 'Éditeur Apps Script' } });
+  console.log('==============================================');
+  console.log('🔑 NOUVEAU MOT DE PASSE TEMPORAIRE');
+  console.log('   Identifiant             : ' + u.Identifiant);
+  console.log('   Mot de passe temporaire : ' + mdp);
+  console.log('   Vous choisirez votre propre mot de passe à la connexion.');
+  console.log('==============================================');
+}

@@ -43,3 +43,16 @@ test('INSTALLER_TOUT fonctionne depuis l\'éditeur, même sans classeur attaché
   assert.match(ctx.__journal.join('\n'), /existe déjà/);
   assert.deepEqual(ctx.__erreurs, []);
 });
+
+test('REINITIALISER_MOT_DE_PASSE : nouveau mot de passe temporaire, compte débloqué', () => {
+  const ctx = creerEnvironnement({ fichierUnique: FICHIER, scriptIndependant: true });
+  ctx.INSTALLER_TOUT();
+  const api = (a, d) => JSON.parse(JSON.stringify(ctx.traiterDemande_(JSON.stringify({ action: a, donnees: d }))));
+  for (let i = 0; i < 5; i++) api('auth.connexion', { identifiant: 'nourou', motDePasse: 'oublie' }); // compte bloqué
+  ctx.__journal.length = 0;
+  ctx.REINITIALISER_MOT_DE_PASSE();
+  const mdp = /Mot de passe temporaire : (\S+)/.exec(ctx.__journal.join('\n'))[1];
+  const r = api('auth.connexion', { identifiant: 'nourou', motDePasse: mdp });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.donnees.utilisateur.doitChangerMdp, true);
+});
