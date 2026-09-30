@@ -21,18 +21,15 @@ Durée : environ 30 minutes la première fois.
 
 1. Dans le classeur : menu **Extensions → Apps Script**. Un nouvel onglet s'ouvre.
 2. En haut à gauche, cliquez sur « Projet sans titre » et renommez-le **MBC Transfert — Serveur**.
-3. Un fichier `Code.gs` existe déjà. Pour **chaque** fichier du dossier `apps-script/` du dépôt :
-   - cliquez sur **+** (à côté de « Fichiers ») → **Script** ;
-   - tapez le nom **sans** `.gs` (ex. `Config`) puis Entrée ;
-   - effacez le contenu proposé et **collez** tout le contenu du fichier du dépôt.
-
-   Fichiers à créer : `Api`, `Audit`, `BaseDonnees`, `Caisses`, `Clients`, `Config`, `Documents`,
-   `Installation`, `Parametres`, `Securite`, `Taux`, `Transactions`, `Utilisateurs`, `Utilitaires`.
-4. Supprimez le fichier `Code.gs` d'origine (clic sur les ⋮ à côté → Supprimer).
+3. Un fichier `Code.gs` est déjà ouvert. **Effacez tout son contenu** (Ctrl+A puis Suppr).
+4. Sur GitHub, ouvrez le dossier `installation` puis le fichier **`Code.gs`**. Cliquez sur l'icône
+   **« Copy raw file »** (deux petits carrés, en haut à droite du fichier) : tout le contenu est copié.
+   Revenez dans Apps Script et **collez** (Ctrl+V) dans `Code.gs`.
+   *(Ce fichier unique regroupe tout le serveur : un seul copier-coller suffit.)*
 5. Cliquez sur la **roue dentée** (Paramètres du projet, à gauche) → cochez
    **« Afficher le fichier manifeste "appsscript.json" dans l'éditeur »**.
    Revenez à l'éditeur (icône `< >`), ouvrez `appsscript.json` et remplacez son contenu
-   par celui du fichier `apps-script/appsscript.json` du dépôt.
+   par celui du fichier `installation/appsscript.json` du dépôt (même méthode : « Copy raw file », puis coller).
 6. Cliquez sur **💾 Enregistrer** (ou Ctrl+S).
 
 ## Étape C — Lancer l'installation
@@ -109,8 +106,7 @@ Tests automatiques (pour un développeur) : `node --test tests/*.test.js` (Node.
 
 ## Mettre à jour vers une nouvelle phase
 
-1. Dans Apps Script, remplacez le contenu de **chaque** fichier par la nouvelle version du dépôt,
-   et créez les nouveaux fichiers (phase 2 : `Clients`, `Documents` ; phase 3 : `Taux`, `Transactions`, `Caisses`).
+1. Dans Apps Script, remplacez tout le contenu de `Code.gs` par la nouvelle version de `installation/Code.gs`.
 2. Enregistrez, puis dans le classeur : menu **MBC Transfert → 1. Installer / mettre à jour les tables**
    (ajoute les nouvelles colonnes et les nouveaux paramètres, sans rien effacer).
 3. **Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer**.

@@ -68,7 +68,7 @@ function creerPlage(donnees, r, c, nr, nc) {
   return plage;
 }
 
-function creerEnvironnement() {
+function creerEnvironnement(options) {
   const feuilles = {};
   const ordre = [];
   const classeur = {
@@ -167,6 +167,11 @@ function creerEnvironnement() {
 
   // On charge les fichiers dans l'ordre alphabétique INVERSE pour vérifier
   // qu'aucun fichier ne dépend de l'ordre de chargement.
+  if (options && options.fichierUnique) {
+    // Version « tout en un » (installation/Code.gs).
+    vm.runInContext(fs.readFileSync(options.fichierUnique, 'utf8'), ctx, { filename: 'Code.gs' });
+    return ctx;
+  }
   const dossier = path.join(__dirname, '..', 'apps-script');
   fs.readdirSync(dossier).filter(f => f.endsWith('.gs')).sort().reverse().forEach(f => {
     vm.runInContext(fs.readFileSync(path.join(dossier, f), 'utf8'), ctx, { filename: f });
