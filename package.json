@@ -1,0 +1,8 @@
+{
+  "name": "mbc-transfert",
+  "private": true,
+  "description": "MBC Transfert — gestion du circuit CAD ⇄ FCFA",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
